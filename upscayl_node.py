@@ -62,8 +62,8 @@ class Upscayl_Upscaler:
             pil_image = ToPILImage()(image.permute([0, 3, 1, 2])[0]).convert("RGB")
         input_path = tempfile.NamedTemporaryFile(suffix=".png").name
         pil_image.save(input_path)
-        output_path = tempfile.NamedTemporaryFile(suffix=".png").name
         upscayl_path = upscayl_path
+        output_path = tempfile.NamedTemporaryFile(suffix=".png").name
         
         cmd = [
             upscayl_path,
