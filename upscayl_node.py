@@ -4,6 +4,8 @@ from PIL import Image
 import numpy as np
 from torchvision.transforms.v2 import ToPILImage
 import tempfile
+from pathlib import Path
+import io
 
 def pil2tensor(images: Image.Image | list[Image.Image]) -> torch.Tensor:
     """Converts a PIL Image or a list of PIL Images to a tensor."""
@@ -48,6 +50,9 @@ class Upscayl_Upscaler:
                 "upscayl_path": ("STRING", {
                     "default": "/opt/Upscayl/resources/bin/upscayl-bin",
                 }),
+                "models_path": ("STRING", {
+                    "default": "/opt/Upscayl/resources/models",
+                }),
             },
         }
 
@@ -56,21 +61,25 @@ class Upscayl_Upscaler:
     FUNCTION = "upscayl_upscale"
     CATEGORY = "upscale tools"
 
-    def upscayl_upscale(self, image, resolution, model, upscayl_path):
+    def upscayl_upscale(self, image, resolution, model, upscayl_path, models_path):
         
+        upscayl_path = upscayl_path
+
         with torch.no_grad():
             pil_image = ToPILImage()(image.permute([0, 3, 1, 2])[0]).convert("RGB")
+
         input_path = tempfile.NamedTemporaryFile(suffix=".png").name
-        pil_image.save(input_path)
-        upscayl_path = upscayl_path
         output_path = tempfile.NamedTemporaryFile(suffix=".png").name
         
+        pil_image.save(input_path)
+
         cmd = [
             upscayl_path,
             "-i", input_path,
             "-o", output_path,
+            "-m", models_path,
             "-n", model,
-            "-w", resolution,
+            "-w", str(resolution),
             "-f", "png"
         ]
         
@@ -82,7 +91,10 @@ class Upscayl_Upscaler:
                 print("错误:", result.stderr)
         except Exception as e:
             print("执行出错:", str(e))
-        
-        out_image = open(output_path, "rb")
-        return (pil2tensor(out_image),)
-            
+        with open(output_path, 'rb') as f:
+            file_bytes = f.read()
+            output = Image.open(io.BytesIO(file_bytes))
+            out_image = pil2tensor(output)
+        Path(input_path).unlink()
+        Path(output_path).unlink()
+        return (out_image,)
