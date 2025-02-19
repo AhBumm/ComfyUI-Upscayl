@@ -56,7 +56,7 @@ class Upscayl_Upscaler:
     FUNCTION = "upscayl_upscale"
     CATEGORY = "upscale tools"
 
-    def upscayl_upscale(image, resolution, model, upscayl_path):
+    def upscayl_upscale(self, image, resolution, model, upscayl_path):
         
         with torch.no_grad():
             pil_image = ToPILImage()(image.permute([0, 3, 1, 2])[0]).convert("RGB")
